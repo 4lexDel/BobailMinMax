@@ -13,7 +13,7 @@ class Game extends GameBase { //A renommer ?
 
         this.playerToPlay = 1;
 
-        this.ai = new BobailAI(5);
+        this.ai = new BobailAI(10);
 
         /*--------------------------------*/
 
