@@ -13,7 +13,17 @@ class Game extends GameBase { //A renommer ?
 
         this.playerToPlay = 1;
 
-        this.ai = new BobailAI(10);
+        this.ai = new BobailAI(3);
+
+        let gridTest = [
+            [2, 3, 1, 0, 1],
+            [2, 1, 1, 0, 1],
+            [2, 0, 0, 0, 1],
+            [2, 0, 0, 0, 1],
+            [2, 0, 0, 0, 1],
+        ];
+
+        console.log("EVA TEST : " + this.ai.evaluateState(gridTest, 2));
 
         /*--------------------------------*/
 
@@ -133,11 +143,19 @@ class Game extends GameBase { //A renommer ?
                 console.log("move possible ? " + result);
                 console.log("BOBAIL PLAYER : " + this.game.playerToPlay);
 
-                if (result) { //Move effectué !
+                if (result && this.game.playerToPlay == 2) { //Move effectué !
                     this.mapPlayer.grid = this.game.grid;
                     this.playerToPlay = 2; //si move possible alors on joue plus (nécessaire car programmation evenement)
 
-                    this.ai.getNextState(this.game.grid);
+                    let result = this.ai.getNextState(this.game.grid, 2);
+
+                    this.game.grid = result;
+                    this.game.switchPlayer();
+                    this.game.playerToPlay = 1;
+
+                    this.mapPlayer.grid = this.game.grid;
+
+                    this.playerToPlay = 1;
 
                     //EFFET DE DELAI => Bobail puis piece... (style)
                 }
