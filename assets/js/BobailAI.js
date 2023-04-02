@@ -42,8 +42,17 @@ class BobailAI {
     }
 
     maxValue(level, state, alpha, beta) { //methode récursive : base de l'algo MinMax
+        let eva = this.evaluateState(state, 2); //evaluate a postion of a player 2
+
+        if (eva < -9000 && level == 1) {
+            console.log("OUI !");;
+            console.log(state);
+        }
+
+        if (Math.abs(eva) > 9000) return eva; //FIN DE LA BRANCHE
+
         if (level == this.depth) {
-            return this.evaluateState(state, 2); //evaluate a postion of a player 2
+            return eva;
         }
 
         let v = undefined;
@@ -51,7 +60,7 @@ class BobailAI {
 
         let childrenState = this.getChildrenState(state, 1); //play as player 1
 
-        if (childrenState.length == 0) console.log("rip max");
+        // if (childrenState.length == 0) console.log("rip max");
 
         for (const key in childrenState) {
             const childState = childrenState[key];
@@ -60,10 +69,14 @@ class BobailAI {
 
             let vChild = this.minValue(level + 1, childState, alpha, beta);
 
+            //if (vChild > 9000) return 9999; //Pk chercher les autres si victoire !
+
             if (vChild) {
                 if (!v || vChild >= v) {
                     v = vChild;
                     bestMove = childState;
+
+                    // if (vChild > 9000) { console.log("break from max in level " + level); break };
                 }
                 if (beta && vChild >= beta && this.pruningActive) {
                     this.nbPrunning++;
@@ -77,8 +90,16 @@ class BobailAI {
     }
 
     minValue(level, state, alpha, beta) {
+        let eva = this.evaluateState(state, 1); //evaluate a postion of a player 1
+
+        if (Math.abs(eva) > 9000) return eva; //FIN DE LA BRANCHE
+
         if (level == this.depth) {
-            return this.evaluateState(state, 1); //evaluate a postion of a player 1
+            //let eva = this.evaluateState(state, 1); //evaluate a postion of a player 1
+
+            //if (eva < -9000) return undefined; //SI defaite alors on fait l'autruche
+
+            return eva;
         }
 
         let v = undefined;
@@ -86,7 +107,7 @@ class BobailAI {
 
         let childrenState = this.getChildrenState(state, 2); //play as player 2
 
-        if (childrenState.length == 0) console.log("rip min");
+        // if (childrenState.length == 0) console.log("rip min");
 
         for (const key in childrenState) {
             const childState = childrenState[key];
@@ -99,6 +120,12 @@ class BobailAI {
                 if (!v || vChild <= v) {
                     v = vChild;
                     bestMove = childState;
+
+                    if (vChild < -9000) {
+                        // console.log("break from min in level " + level);
+                        // if (level == 0) console.log(childState);
+                        break
+                    }; //Pk chercher les autres si victoire !
                 }
                 if (alpha && vChild <= alpha && this.pruningActive) {
                     this.nbPrunning++;

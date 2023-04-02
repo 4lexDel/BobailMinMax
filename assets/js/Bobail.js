@@ -13,6 +13,14 @@ class Bobail {
             [2, 0, 0, 0, 1],
         ];
 
+        // this.grid = [
+        //     [1, 0, 2, 0, 0],
+        //     [1, 3, 2, 0, 2],
+        //     [1, 2, 0, 0, 0],
+        //     [1, 0, 0, 0, 2],
+        //     [0, 0, 0, 0, 1]
+        // ]
+
         this.playerToPlay = 1; //1 => first / 2 => second
 
         this.firstMove = true; //Particularité
