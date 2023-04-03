@@ -71,21 +71,21 @@ class BobailAI {
 
             //if (vChild > 9000) return 9999; //Pk chercher les autres si victoire !
 
-            if (vChild) {
+            if (vChild != undefined) {
                 if (!v || vChild >= v) {
                     v = vChild;
                     bestMove = childState;
 
                     // if (vChild > 9000) { console.log("break from max in level " + level); break };
                 }
-                if (beta && vChild >= beta && this.pruningActive) {
+                if (beta != undefined && vChild >= beta && this.pruningActive) {
                     this.nbPrunning++;
                     return v;
                 }
                 if (!alpha || vChild > alpha) alpha = vChild;
             }
         }
-        if (level == 0) return { eva: v, state: state };
+        if (level == 0) return { eva: v, state: bestMove };
         return v;
     }
 
@@ -116,7 +116,7 @@ class BobailAI {
 
             let vChild = this.maxValue(level + 1, childState, alpha, beta);
 
-            if (vChild) {
+            if (vChild != undefined) {
                 if (!v || vChild <= v) {
                     v = vChild;
                     bestMove = childState;
@@ -127,7 +127,7 @@ class BobailAI {
                         break
                     }; //Pk chercher les autres si victoire !
                 }
-                if (alpha && vChild <= alpha && this.pruningActive) {
+                if (alpha != undefined && vChild <= alpha && this.pruningActive) {
                     this.nbPrunning++;
                     return v;
                 }

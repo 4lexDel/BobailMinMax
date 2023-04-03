@@ -5,3 +5,6 @@
 ## Notes
 
 - PROBLEME !!! => Actuellement on test des combinaisons sans même savoir si la partie est finis ou pas !
+- fix le prunning pour gagner  en perf !! ==> bizarre
+        return v exact ???  
+        mauvaise gestion du undefined
