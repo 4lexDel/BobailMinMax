@@ -4,7 +4,7 @@ class BobailAI {
 
         this.finalLevelCheck = 0;
 
-        this.pruningActive = false;
+        this.pruningActive = true;
 
         this.nbAVGChildrenTest = 2;
 
@@ -16,15 +16,14 @@ class BobailAI {
         return array2D.map((array) => [...array]);
     }
 
-    getNextState(currentState, playerID) { //Point d'entré
-        console.log("AI");
+    testPruning() { //https://thundaxsoftware.blogspot.com/2010/11/alpha-beta-pruning-algorithm-with.html?m=0
+        this.endValue = [4, 48, 15, 25, 35, 23, 19, -5, -25, 11, -46, 7, 45, -9, 48, 10];
 
-        // this.evaluateState(currentState);
-        // console.log(currentState);
+        this.indexValue = 0;
 
-        // this.getChildrenState(currentState); //TEST : (normalement call par MinMax)
+        this.nodeCheck = [];
 
-        let result = this.minValue(0, this.copy2DArray(currentState), undefined, undefined);
+        let result = this.maxValue(0, null, undefined, undefined);
 
         console.log("DEPTH : " + this.depth);
         console.log("VAL : " + result.eva);
@@ -34,52 +33,35 @@ class BobailAI {
         console.log("grid final : ");
         console.log(result.state);
 
-        return result.state;
-    }
+        console.log("Node check : ");
+        console.log(this.nodeCheck);
 
-    getRandomNumber(min, max) {
-        return min + Math.random() * (max - min);
+        //console.log("path explore : " + parseInt(this.indexValue));
     }
 
     maxValue(level, state, alpha, beta) { //methode récursive : base de l'algo MinMax
-        let eva = this.evaluateState(state, 2); //evaluate a postion of a player 2
-
-        if (eva < -9000 && level == 1) {
-            console.log("OUI !");;
-            console.log(state);
-        }
-
-        if (Math.abs(eva) > 9000) return eva; //FIN DE LA BRANCHE
-
         if (level == this.depth) {
-            return eva;
+            return this.evaluateState();
         }
 
         let v = undefined;
         let bestMove = undefined;
 
-        let childrenState = this.getChildrenState(state, 1); //play as player 1
-
-        // if (childrenState.length == 0) console.log("rip max");
+        let childrenState = this.getChildrenState(); //play as player 1
 
         for (const key in childrenState) {
             const childState = childrenState[key];
-            // console.log("p1 move prediction");
-            // console.log(childState);
 
             let vChild = this.minValue(level + 1, childState, alpha, beta);
-
-            //if (vChild > 9000) return 9999; //Pk chercher les autres si victoire !
 
             if (vChild != undefined) {
                 if (!v || vChild >= v) {
                     v = vChild;
                     bestMove = childState;
-
-                    // if (vChild > 9000) { console.log("break from max in level " + level); break };
                 }
                 if (beta != undefined && vChild >= beta && this.pruningActive) {
                     this.nbPrunning++;
+                    this.indexValue += 2 ** (this.depth - level - 1); //skip value
                     return v;
                 }
                 if (!alpha || vChild > alpha) alpha = vChild;
@@ -90,29 +72,17 @@ class BobailAI {
     }
 
     minValue(level, state, alpha, beta) {
-        let eva = this.evaluateState(state, 1); //evaluate a postion of a player 1
-
-        if (Math.abs(eva) > 9000) return eva; //FIN DE LA BRANCHE
-
         if (level == this.depth) {
-            //let eva = this.evaluateState(state, 1); //evaluate a postion of a player 1
-
-            //if (eva < -9000) return undefined; //SI defaite alors on fait l'autruche
-
-            return eva;
+            return this.evaluateState();
         }
 
         let v = undefined;
         let bestMove = undefined;
 
-        let childrenState = this.getChildrenState(state, 2); //play as player 2
-
-        // if (childrenState.length == 0) console.log("rip min");
+        let childrenState = this.getChildrenState(); //play as player 2
 
         for (const key in childrenState) {
             const childState = childrenState[key];
-            // console.log("p2 move prediction");
-            // console.log(childState);
 
             let vChild = this.maxValue(level + 1, childState, alpha, beta);
 
@@ -120,15 +90,10 @@ class BobailAI {
                 if (!v || vChild <= v) {
                     v = vChild;
                     bestMove = childState;
-
-                    if (vChild < -9000) {
-                        // console.log("break from min in level " + level);
-                        // if (level == 0) console.log(childState);
-                        break
-                    }; //Pk chercher les autres si victoire !
                 }
                 if (alpha != undefined && vChild <= alpha && this.pruningActive) {
                     this.nbPrunning++;
+                    this.indexValue += 2 ** (this.depth - level - 1); //skip value
                     return v;
                 }
                 if (!beta || vChild < beta) beta = vChild;
@@ -138,244 +103,17 @@ class BobailAI {
         return v;
     }
 
-    getChildrenState(state, playerID) { //get all the children state of a state
-        //              prendre en compte le premier coup (sans bobail) #TODO
-        //              prendre en compte les victoires !!
-        let childrenState = [];
+    evaluateState() {
+        let val = this.endValue[this.indexValue];
 
-        let bobailStateMove = this.getBobailNextMoves(state); //Tous les mouvements possible de bobail
-        // console.log("Bobail move : ");
-        // console.log(bobailStateMove);
-        // console.log("------------------");
+        this.indexValue++;
 
-        bobailStateMove.forEach(bobailMove => {
-            let newPieceNextMoves = this.getPieceNextMoves(bobailMove, playerID);
-            //ADD TO GLOBAL ARRAY ----------------------------------------------------------
-            childrenState = childrenState.concat(newPieceNextMoves);
-        });
+        this.nodeCheck.push(val);
 
-        // console.log(childrenState);
-        this.nbCombination += childrenState.length;
-
-        return childrenState;
+        return val;
     }
 
-    getBobailNextMoves(state) {
-        let newBobailStates = []; //3D array !
-
-        for (let x = 0; x < state.length; x++) {
-            for (let y = 0; y < state[0].length; y++) {
-                if (state[x][y] == 3) { //Find the bobail
-                    let newState1 = this.moveBobail(x, y, x + 1, y, this.copy2DArray(state));
-                    if (newState1) newBobailStates.push(newState1);
-
-                    let newState2 = this.moveBobail(x, y, x - 1, y, this.copy2DArray(state));
-                    if (newState2) newBobailStates.push(newState2);
-
-                    let newState3 = this.moveBobail(x, y, x, y + 1, this.copy2DArray(state));
-                    if (newState3) newBobailStates.push(newState3);
-
-                    let newState5 = this.moveBobail(x, y, x + 1, y + 1, this.copy2DArray(state)); //8 positions possible du bobail
-                    if (newState5) newBobailStates.push(newState5);
-
-                    let newState7 = this.moveBobail(x, y, x - 1, y + 1, this.copy2DArray(state));
-                    if (newState7) newBobailStates.push(newState7);
-
-                    let newState4 = this.moveBobail(x, y, x, y - 1, this.copy2DArray(state)); //On copie // on test et si vrai alors on ajoute la modiff !
-                    if (newState4) newBobailStates.push(newState4);
-
-                    let newState6 = this.moveBobail(x, y, x + 1, y - 1, this.copy2DArray(state));
-                    if (newState6) newBobailStates.push(newState6);
-
-                    let newState8 = this.moveBobail(x, y, x - 1, y - 1, this.copy2DArray(state));
-                    if (newState8) newBobailStates.push(newState8);
-
-                    return newBobailStates;
-                }
-            }
-
-        }
-    }
-
-    moveBobail(x1, y1, x2, y2, grid) { //Move piece (simpler than bobail move function)
-        if (!this.isCorrectDestinationBobail(x1, y1, x2, y2, grid)) return false;
-
-        let origin = this.getGridValue(x1, y1, grid);
-
-        grid[x1][y1] = 0; //void
-        grid[x2][y2] = origin;
-
-        return grid;
-    }
-
-    isCorrectDestinationBobail(x1, y1, x2, y2, grid) { //Check if the bobail movement is legal !
-        if (this.getGridValue(x2, y2, grid) != 0) return false; //Cas simple
-
-        let deltaX = Math.abs(x1 - x2);
-        let deltaY = Math.abs(y1 - y2);
-
-        if ((deltaX == 1 || deltaY == 1) && (deltaX <= 1 && deltaY <= 1)) return true;
-
-        return false;
-    }
-
-    getPieceNextMoves(state, playerID) {
-        let newPieceStates = []; //3D array !
-
-        for (let x = 0; x < state.length; x++) {
-            for (let y = 0; y < state[0].length; y++) {
-                if (state[x][y] == playerID) { //Trouve les pieces à jouer
-                    // console.log(`x1:${x} y1:${y} x2:${coordsPieceMove.x} y2:${coordsPieceMove.y}`);
-                    let coord1 = this.getPieceDestinationByDirection(x, y, 1, 0, state); //destination potentiel
-                    if (coord1) newPieceStates.push(this.movePiece(x, y, coord1.x, coord1.y, this.copy2DArray(state)));
-
-                    let coord2 = this.getPieceDestinationByDirection(x, y, 1, 1, state);
-                    if (coord2) newPieceStates.push(this.movePiece(x, y, coord2.x, coord2.y, this.copy2DArray(state)));
-
-                    let coord3 = this.getPieceDestinationByDirection(x, y, 1, -1, state);
-                    if (coord3) newPieceStates.push(this.movePiece(x, y, coord3.x, coord3.y, this.copy2DArray(state)));
-
-                    let coord4 = this.getPieceDestinationByDirection(x, y, -1, 0, state); //destination potentiel
-                    if (coord4) newPieceStates.push(this.movePiece(x, y, coord4.x, coord4.y, this.copy2DArray(state)));
-
-                    let coord5 = this.getPieceDestinationByDirection(x, y, -1, 1, state);
-                    if (coord5) newPieceStates.push(this.movePiece(x, y, coord5.x, coord5.y, this.copy2DArray(state)));
-
-                    let coord6 = this.getPieceDestinationByDirection(x, y, -1, -1, state);
-                    if (coord6) newPieceStates.push(this.movePiece(x, y, coord6.x, coord6.y, this.copy2DArray(state)));
-
-                    let coord7 = this.getPieceDestinationByDirection(x, y, 0, 1, state);
-                    if (coord7) newPieceStates.push(this.movePiece(x, y, coord7.x, coord7.y, this.copy2DArray(state)));
-
-                    let coord8 = this.getPieceDestinationByDirection(x, y, 0, -1, state);
-                    if (coord8) newPieceStates.push(this.movePiece(x, y, coord8.x, coord8.y, this.copy2DArray(state)));
-                }
-            }
-        }
-        return newPieceStates;
-    }
-
-    getPieceDestinationByDirection(x0, y0, dx, dy, grid) { //return (x destination ; y destination) or false
-        if ((Math.abs(dx) == 1 && Math.abs(dy) == 1) || ((Math.abs(dx) == 1 && dy == 0) || (dx == 0 && Math.abs(dy) == 1))) { //Diago ou droit
-            // console.log("Correct piece ? => x1 : " + x1 + " | y1 : " + y1 + " | x2 : " + x2 + " | y2 : " + y2);
-            if (this.getGridValue(x0 + dx, y0 + dy, grid) != 0) return false; //Si obstacle est juste devant !!
-
-            let cx = x0;
-            let cy = y0;
-
-            for (let i = 1; i <= 5; i++) {
-                cx += dx;
-                cy += dy;
-
-                if (this.getGridValue(cx, cy, grid) != 0) { //Dés qu'on rencontre un obstacle on renvoie les coords d'avant
-                    return { x: cx - dx, y: cy - dy };
-                }
-            }
-        }
-
-        return false;
-    }
-
-    movePiece(x1, y1, x2, y2, grid) { //Protection ???
-        let origin = this.getGridValue(x1, y1, grid);
-
-        grid[x1][y1] = 0; //void
-        grid[x2][y2] = origin;
-
-        return grid;
-    }
-
-    getGridValue(x, y, grid) {
-        if (x < 0 || y < 0 || x >= grid.length || y > grid[0].length) return -1;
-        return grid[x][y];
-    }
-
-    evaluateStateTest(state) {
-        //about the bobail position
-
-        return parseInt(this.getRandomNumber(-10, 10));
-    }
-
-    evaluateState(state, playerID) {
-        //Avancée du bobail                         ==> milieu : 0 ; coté-1 : +-2 ; win +-9999
-        //Nombre de liberté du joueur ou de l'ordi  ==> +-0,1/liberté
-        //Piece devant ou derriere le bobail        ==> +-0.2
-        let evaluation = 0;
-
-        evaluation += this.evaluateBobail(state, playerID);
-
-        // console.log(evaluation);
-
-        return evaluation;
-    }
-
-    evaluateBobail(state, playerID) {
-        let evaluationBobail = 0;
-
-        for (let x = 0; x < state.length; x++) {
-            for (let y = 0; y < state[0].length; y++) {
-                if (state[x][y] == 3) { //Find the bobail
-                    evaluationBobail += this.evaluateBobailNeighbours(x, y, state);
-                    evaluationBobail += this.evaluateBobailPosition(y);
-                    evaluationBobail += this.evaluateBobailStuck(x, y, state, playerID);
-                    break;
-                }
-            }
-        }
-        //console.log(evaluationBobail);
-
-        return evaluationBobail;
-    }
-
-    evaluateBobailNeighbours(x, y, state) {
-        let evaluationNeighbours = 0;
-
-        if (this.getGridValue(x - 1, y + 1, state) != 0) evaluationNeighbours -= 0.2;
-        if (this.getGridValue(x, y + 1, state) != 0) evaluationNeighbours -= 0.2;
-        if (this.getGridValue(x + 1, y + 1, state) != 0) evaluationNeighbours -= 0.2;
-
-        if (this.getGridValue(x - 1, y - 1, state) != 0) evaluationNeighbours += 0.2;
-        if (this.getGridValue(x, y - 1, state) != 0) evaluationNeighbours += 0.2;
-        if (this.getGridValue(x + 1, y - 1, state) != 0) evaluationNeighbours += 0.2;
-
-        return Math.round(evaluationNeighbours * 10) / 10;
-    }
-
-    evaluateBobailPosition(y) {
-        switch (y) {
-            case 0:
-                return -9999;
-            case 1:
-                return -4;
-            case 2:
-                return 0;
-            case 3:
-                return 4;
-            case 4:
-                return 9999;
-        }
-        return 0;
-    }
-
-    evaluateBobailStuck(x, y, state, playerID) {
-        if (this.getGridValue(x + 1, y - 1, state) != 0 &&
-            this.getGridValue(x + 1, y, state) != 0 &&
-            this.getGridValue(x + 1, y + 1, state) != 0 &&
-            this.getGridValue(x - 1, y - 1, state) != 0 &&
-            this.getGridValue(x - 1, y, state) != 0 &&
-            this.getGridValue(x - 1, y + 1, state) != 0 &&
-            this.getGridValue(x, y + 1, state) != 0 &&
-            this.getGridValue(x, y - 1, state) != 0) {
-            if (playerID == 1) return 9999;
-            else return -9999;
-        }
-        return 0;
+    getChildrenState() { //get all the children state of a state
+        return [null, null];
     }
 }
-
-//TODO
-
-/**Condition de victoire à détecter :
- * Adversaire bloquer ?????
- * Bobail dans le camps
- */

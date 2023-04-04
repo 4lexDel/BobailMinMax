@@ -13,17 +13,9 @@ class Game extends GameBase { //A renommer ?
 
         this.playerToPlay = 1;
 
-        this.ai = new BobailAI(3);
+        this.ai = new BobailAI(4);
 
-        let gridTest = [
-            [1, 3, 2, 0, 0],
-            [1, 2, 2, 0, 2],
-            [1, 0, 0, 0, 0],
-            [1, 0, 0, 0, 2],
-            [0, 0, 0, 0, 1]
-        ]
-
-        console.log("EVA TEST : " + this.ai.evaluateState(gridTest, 2));
+        this.ai.testPruning();
 
         /*--------------------------------*/
 
